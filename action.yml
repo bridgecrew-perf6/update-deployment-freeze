@@ -1,0 +1,41 @@
+name: 'update deployment freeze'
+description: 'A deployment_freeze_status tag is defined on AWS resource,  '
+inputs:
+  service-name:
+    description: >
+      The name of the service defined in ecs cluster
+    required: true
+  cluster:
+    description: >
+      The name of the ecs cluster, inside which the service is defined
+    required: true
+  config-path:
+    description: >-
+      path to the config file in json format
+    required: false
+  status:
+    description: >-
+      new status to be applied
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: load variables
+      id: load-vars
+      uses: myriad-actions/load-variables@v1
+      with:
+        config-path: ${{ inputs.config-path }}
+    - name: configure AWS credentials 
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ fromJson(steps.load-vars.outputs.vars).role-to-assume }}
+        aws-region: ${{ fromJson(steps.load-vars.outputs.vars).aws-region }}
+    - name: update tag 
+      run: |
+        echo SARN=$(aws ecs describe-services --cluster hub-preprod --services hub-weather \
+        --query 'services[].serviceArn' | jq  -r ".[]")
+        aws resourcegroupstaggingapi tag-resources \
+        --resource-arn-list $SARN \
+        --tags deployment-freeze-status="${{ inputs.status }}"
+      shell: bash

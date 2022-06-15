@@ -34,7 +34,7 @@ runs:
         aws-region: ${{ fromJson(steps.load-vars.outputs.vars).aws-region }}
     - name: update tag 
       run: |
-        echo SARN=$(aws ecs describe-services --cluster hub-preprod --services hub-weather \
+        SARN=$(aws ecs describe-services --cluster hub-preprod --services hub-weather \
         --query 'services[].serviceArn' | jq  -r ".[]")
         aws resourcegroupstaggingapi tag-resources \
         --resource-arn-list $SARN \

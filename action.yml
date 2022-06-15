@@ -1,7 +1,7 @@
 name: 'update deployment freeze'
 description: 'A deployment_freeze_status tag is defined on AWS resource,  '
 inputs:
-  service-name:
+  service:
     description: >
       The name of the service defined in ecs cluster
     required: true
@@ -33,10 +33,9 @@ runs:
         role-to-assume: ${{ fromJson(steps.load-vars.outputs.vars).role-to-assume }}
         aws-region: ${{ fromJson(steps.load-vars.outputs.vars).aws-region }}
     - name: update tag 
-      run: |
-        SARN=$(aws ecs describe-services --cluster hub-preprod --services hub-weather \
-        --query 'services[].serviceArn' | jq  -r ".[]")
-        aws resourcegroupstaggingapi tag-resources \
-        --resource-arn-list $SARN \
-        --tags deployment-freeze-status="${{ inputs.status }}"
+      run: |        
+        aws ecs tag-resource --resource-arn \
+        $(aws ecs describe-services --cluster ${{ inputs.cluster }}  --services ${{ inputs.service }} \
+        --query 'services[].serviceArn' | jq  -r ".[]") \
+        --tags key=deployment-freeze-status,value=${{ inputs.status }}
       shell: bash
